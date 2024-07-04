@@ -34,7 +34,7 @@ bot.once('spawn', async ()=> {
 	//const defaultMove = new Movements(bot);
 
 	mcData = require('minecraft-data')(bot.version);
-	bot.chat(`I'm a happy little robot. (${bot.game.gameMode})`);
+	bot.chat(`Привет! Я тупой фермер!`);
 
 	let farmBlocks = bot.findBlock({
 		matching: (block)=>{
@@ -71,6 +71,8 @@ bot.once('spawn', async ()=> {
 bot.on('chat', async (username, message)=>{
 	let tokens = message.split(' ');
 
+	console.log(`received the message: (${bot.game.gameMode})`);
+
 	switch(tokens[0]) {
 		case 'bed':
 			bedPosition = vec3(parseInt(tokens[1]), parseInt(tokens[2]), parseInt(tokens[3]));
@@ -87,6 +89,7 @@ bot.on('chat', async (username, message)=>{
 			} else {
 				let loops = parseInt(tokens[1]);
 				expansion += loops;
+				bot.chat(`expanding to ${expansion}`)
 			}
 			break;
 		case 'hoe':
@@ -106,8 +109,13 @@ bot.on('chat', async (username, message)=>{
 });
 
 async function mainLoop() {
+	i = 0;
 	while (true) {
-		if (bot.time.timeOfDay > BED_TIME) await sleepInBed();
+		console.log(" ");
+		console.log(" ");
+		console.log(`mainLoop iteration ${i++}`);
+
+		//if (bot.time.timeOfDay > BED_TIME) await sleepInBed();
 		if (bot.inventory.slots.filter(v=>v==null).length < 11) await depositLoop();
 		if (bot.food <= 10 || snackTime) await takeSnackBreak();
 		
@@ -187,7 +195,10 @@ async function findEdges() {
 }
 
 async function expandFarm() {
+	console.log("Go Expand Farm ...");
+
 	let openList = await findEdges();
+	console.log(`openList:${openList}`);
 
 	while (openList.length > 0) {
 		let position = openList.reduce((best, item)=>{
@@ -204,6 +215,7 @@ async function expandFarm() {
 		await bot.goto(position);
 
 		let dirt = bot.blockAt(position);
+		//bot.chat("expand farm");
 		await bot.activateBlock(dirt, vec3(0, 1, 0)).catch(console.log);
 
 		await bot.waitForTicks(1);
@@ -213,6 +225,7 @@ async function expandFarm() {
 		if (!bot.heldItem || bot.heldItem.name !== seedName) await bot.equip(mcData.itemsByName[seedName].id).catch(console.log);
 
 		await bot.goto(position);
+		//bot.chat("expand farm 2");
 		await bot.activateBlock(dirt, vec3(0, 1, 0)).catch(console.log);
 	}
 
@@ -353,6 +366,7 @@ async function getHoe() {
 
 	// Craft sticks.
 	let stickRecipes = bot.recipesFor(stickID, null, 1, null);
+	console.log(stickRecipes);
 	await bot.craft(stickRecipes[0], 1, null);
 
 	console.log("Crafted sticks!");
@@ -405,6 +419,11 @@ async function getHoe() {
 }
 
 async function sleepInBed() {
+	if (bot.isSleeping)
+		return;
+	
+	console.log("finding bed ...");
+
 	let bed = bot.findBlock({
 		matching: block=>bot.isABed(block),
 	});
@@ -420,13 +439,20 @@ async function sleepInBed() {
 }
 
 async function depositLoop() {
+	console.log("finding chest ...");
+
 	let chestBlock = bot.findBlock({
 		matching: mcData.blocksByName['chest'].id,
 	});
 
-	if (!chestBlock) return;
+	if (!chestBlock) {
+		console.log("Couldn't find chest.");
+		return;
+	}
 
 	if (bot.entity.position.distanceTo(chestBlock.position) < 2) {
+		bot.chat("deposit");
+
 		bot.setControlState('forward', false);
 
 		let chest = await bot.openChest(chestBlock);
@@ -444,9 +470,15 @@ async function depositLoop() {
 }
 
 async function harvestCrops() {
+	console.log("finding ready to crop ...");
+
 	let harvest = readyCrop();
 
-	if (!harvest) return;
+	if (!harvest) {
+		console.log("Couldn't find harvest.");
+		return;
+	}
+	console.log(harvest);
 
 	await bot.goto(harvest.position);
 
@@ -469,6 +501,7 @@ async function harvestCrops() {
 	}
 
 	let dirt = bot.blockAt(harvest.position.offset(0, -1, 0));
+	bot.chat('harvest crops');
 	await bot.activateBlock(dirt, vec3(0, 1, 0)).catch(console.log);
 }
 
@@ -486,7 +519,10 @@ async function fillFarmland() {
 		return topBlock.name === "air" || topBlock.name === "cave_air";
 	});
 
-	if (!vacant) return;
+	if (!vacant) {
+		console.log("Couldn't find vacant farmland.");
+		return;
+	}
 
 	await bot.goto(vacant);
 
@@ -506,6 +542,8 @@ function readyCrop() {
 async function takeSnackBreak() {
 	let bread_id = mcData.itemsByName['bread'].id;
 	snackTime = false;
+
+	console.log("finding crafting_table ...");
 
 	let table = bot.findBlock({
 		matching: (block)=>{
@@ -575,6 +613,7 @@ async function startFarm() {
 
 	await bot.goto(farmPosition);
 
+	bot.chat("start farm");
 	let dirt = bot.blockAt(farmPosition);
 	await bot.activateBlock(dirt, vec3(0, 1, 0)).catch(console.log);
 
@@ -585,6 +624,7 @@ async function startFarm() {
 	if (!bot.heldItem || bot.heldItem.name !== seedName) await bot.equip(mcData.itemsByName[seedName].id).catch(console.log);
 
 	await bot.goto(farmPosition);
+	bot.chat("start farm 2");
 	await bot.activateBlock(dirt, vec3(0, 1, 0)).catch(console.log);
 
 	return true;
