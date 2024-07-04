@@ -349,10 +349,10 @@ async function craftHoe() {
 }
 
 async function getHoe() {
-	let planksID = mcData.itemsByName['oak_planks'].id;
-	let stickID = mcData.itemsByName['stick'].id;
-	let tableID = mcData.itemsByName['crafting_table'].id;
-	let hoeID = mcData.itemsByName['wooden_hoe'].id;
+	let planksID = bot.registry.itemsByName['oak_planks'].id;
+	let stickID = bot.registry.itemsByName['stick'].id;
+	let tableID = bot.registry.itemsByName['crafting_table'].id;
+	let hoeID = bot.registry.itemsByName['wooden_hoe'].id;
 
 	await getWood(4);
 
@@ -360,6 +360,11 @@ async function getHoe() {
 
 	// Craft wooden planks.
 	let planksRecipes = bot.recipesFor(planksID, null, 1, null);
+	console.log(planksRecipes);
+	if (!planksRecipes || !planksRecipes) {
+		comsole.err(`no planksRecipes`);
+		return;
+	}
 	await bot.craft(planksRecipes[0], 3, null);
 
 	console.log("Crafted planks!");
@@ -379,7 +384,7 @@ async function getHoe() {
 
 	// Find somewhere to put the crafting table.
 	let solidBlocks = bot.findBlocks({
-		matching: (block)=>{
+		matching: (block) => {
 			return block.name !== "air" && block.name !== "cave_air";
 		},
 		count: 64,
@@ -404,9 +409,9 @@ async function getHoe() {
 
 	let tablePosition = craftingSpot.position;
 
-	await bot.equip(mcData.itemsByName["crafting_table"].id);
+	await bot.equip(bot.registry.itemsByName["crafting_table"].id);
 	await bot.goto(tablePosition, 4);
-	await bot.placeBlock(craftingSpot, {x: 0, y: 1, z: 0}).catch(console.log);
+	await bot.placeBlock(craftingSpot, { x: 0, y: 1, z: 0 }).catch(console.log);
 
 	console.log("Placed the table! (maybe)");
 
