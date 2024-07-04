@@ -4,6 +4,8 @@ const Movements = require('mineflayer-pathfinder').Movements
 const { GoalNear } = require('mineflayer-pathfinder').goals
 const vec3 = require('vec3');
 
+const fs = require('node:fs');
+
 const BED_TIME = 12000;
 
 let cropType = 'wheat_seeds'
@@ -44,6 +46,23 @@ bot.once('spawn', async ()=> {
 		console.log("Waiting for command to start.");
 		return;
 	}*/
+
+	//console.log(bot.registry.blocksByName);
+	// fs.writeFile("debug/blocksByName.json", JSON.stringify(bot.registry.blocksByName), function(err) {
+	// 	if(err) {
+	// 		return console.log(err);
+	// 	}
+	// }); 
+	// fs.writeFile("debug/itemsByName.json", JSON.stringify(bot.registry.itemsByName), function(err) {
+	// 	if(err) {
+	// 		return console.log(err);
+	// 	}
+	// }); 
+	// fs.writeFile("debug/mcData.json", JSON.stringify(mcData), function(err) {
+	// 	if(err) {
+	// 		return console.log(err);
+	// 	}
+	// }); 
 
 	console.log("Entering main loop.");
 	mainLoop();

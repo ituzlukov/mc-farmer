@@ -1,4 +1,4 @@
-node_modules
 package-lock.json
-server.js
+node_modules/*
 web/*
+debug/*
