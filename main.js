@@ -8,9 +8,12 @@ const fs = require('node:fs');
 
 const BED_TIME = 12000;
 
-let cropType = 'wheat_seeds'
-let seedName = 'wheat_seeds';
-let harvestName = 'wheat';
+//let cropType = 'wheat_seeds'
+//let seedName = 'wheat_seeds';
+//let harvestName = 'wheat';
+let cropType = 'carrot'
+let seedName = 'carrot';
+let harvestName = 'carrots';
 
 let expansion = 0;
 let snackTime = false;
@@ -260,8 +263,10 @@ async function getSeeds() {
 		bot.waitForTicks(1);
 		
 		// Look for an item entity with ID of 619 (wheat_seeds)
-		let itemEntity = bot.nearestEntity((entity)=>{
-			return entity.name === 'item' && entity.metadata[7].itemId === 619;
+		let itemEntity = bot.nearestEntity((entity) => {
+			//console.log(entity);
+			//return entity.name === 'item' && entity.metadata[7] && entity.metadata[7].itemId === 619;
+			return entity.name === 'item' && entity.metadata[7] && entity.metadata[7].itemId === 383; // carrots
 		});
 
 		if (!itemEntity) continue;
