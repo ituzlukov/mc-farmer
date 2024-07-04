@@ -506,15 +506,18 @@ async function harvestCrops() {
 }
 
 async function fillFarmland() {
+	console.log("finding vacant farmland ...");
+
+	try {
 	let farmBlocks = await bot.findBlocks({
-		matching: (block)=>{
+			matching: (block) => {
 			return block.name === "farmland";
 		},
 		count: 256,
 		maxDistance: 64,
 	});
 
-	let vacant = farmBlocks.find(position=>{
+		let vacant = farmBlocks.find(position => {
 		let topBlock = bot.blockAt(position.offset(0, 1, 0));
 		return topBlock.name === "air" || topBlock.name === "cave_air";
 	});
@@ -526,9 +529,27 @@ async function fillFarmland() {
 
 	await bot.goto(vacant);
 
-	if (!bot.heldItem || bot.heldItem.name != seedName) await bot.equip(mcData.itemsByName[seedName].id);
+		if (!bot.heldItem || bot.heldItem.name != seedName) {
+
+			const seed = bot.inventory.items().find(item => item.name.includes(seedName))
+			if (seed) {
+				//console.log(`equip seedName ${seedName}`);
+				//console.log(`equip is ${bot.registry.itemsByName[seedName].id}`);
+				await bot.equip(bot.registry.itemsByName[seedName].id);
+			}
+			else {
+				bot.chat('no items to fill farmland');
+				return;
+			}
+		}
+
+		bot.chat('fill farmland');
 
 	await bot.activateBlock(bot.blockAt(vacant), vec3(0, 1, 0)).catch(console.log);
+
+	} catch (e) {
+		console.log(e)
+	}
 }
 
 function readyCrop() {
