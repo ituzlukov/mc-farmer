@@ -567,25 +567,27 @@ async function takeSnackBreak() {
 	console.log("finding crafting_table ...");
 
 	let table = bot.findBlock({
-		matching: (block)=>{
+		matching: (block) => {
 			return block.name === "crafting_table";
 		},
+		maxDistance: 32,
 	});
 
-	if (!table) {
-		console.log("Couldn't find a table.");
-		return;
-	}
+	let ate = false;
 
+	if (table) {
+
+		let bread_id = bot.registry.itemsByName['bread'].id;
+
+		console.log("goto crafting_table ...");
 	await bot.goto(table.position);
 
 	let recipe = bot.recipesFor(bread_id, null, 1, table)[0];
 
 	if (!recipe) {
 		console.log("Couldn't find a recipe.");
-		return;
 	}
-
+		else {
 	await bot.craft(recipe, 1, table);
 
 	console.log("Made bread.");
@@ -595,10 +597,22 @@ async function takeSnackBreak() {
 		return;
 	}
 
+			console.log(`equip ${bread_id}`);
 	await bot.equip(bread_id);
 	await bot.consume();
 
 	console.log("Ate bread.");
+			ate = true;
+		}
+	}
+
+	if (!ate) {
+		let carrot_id = bot.registry.itemsByName['carrot'].id;
+		console.log(`equip ${carrot_id}`);
+		await bot.equip(carrot_id);
+		await bot.consume();
+		console.log("Ate carrot.");
+	}
 }
 
 async function startFarm() {
