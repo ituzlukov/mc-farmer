@@ -1,5 +1,7 @@
 const mineflayer = require('mineflayer');
-const pathfinder = require("./pathfinder.js");
+const pathfinder = require('mineflayer-pathfinder').pathfinder
+const Movements = require('mineflayer-pathfinder').Movements
+const { GoalNear } = require('mineflayer-pathfinder').goals
 const vec3 = require('vec3');
 
 const BED_TIME = 12000;
@@ -25,7 +27,10 @@ let mcData;
 bot.on('kicked', (reason, loggedIn) => console.log(reason, loggedIn));
 bot.on('error', err => console.log(err));
 
-bot.once('spawn', async ()=>{
+bot.once('spawn', async ()=> {
+	bot.loadPlugin(pathfinder)
+	//const defaultMove = new Movements(bot);
+
 	mcData = require('minecraft-data')(bot.version);
 	bot.chat(`I'm a happy little robot. (${bot.game.gameMode})`);
 
@@ -94,59 +99,19 @@ async function mainLoop() {
 			expansion -= 1;
 		}
 
-		await bot.waitForTicks(1);
+		console.log("waitForTicks 10 ...");
+		await bot.waitForTicks(10);
+
+		
+		
 	}
 }
 
-// This is still used as a dumb fall back in case the pathfinder fails.
-async function oldGoto (position, range=2) {
-	/*while (bot.entity.position.distanceTo(position) > range) {
-		bot.lookAt(position);
-		bot.setControlState('forward', true);
-
-		bot.setControlState('sprint', (bot.entity.position.distanceTo(position) > 3));
-
-		bot.setControlState('jump', bot.entity.isCollidedHorizontally);
-
-		await bot.waitForTicks(1);
-	}*/
-
-	bot.lookAt(position);
-	bot.setControlState('forward', true);
-	bot.setControlState('sprint', (bot.entity.position.distanceTo(position) > 3));
-	bot.setControlState('jump', bot.entity.isCollidedHorizontally);
-	await bot.waitForTicks(1);
-
-	//bot.setControlState('forward', false);
-};
-
 bot.goto = async (target, range=2)=>{
-    let botPosition = bot.entity.position;
-    let path;// = pathfinder.path(bot, bot.entity.position, target, range);
-
-    while (botPosition.distanceTo(target) > range) {
-        path = pathfinder.path(bot, botPosition, target, range);
-
-        //if (!path || !path.length) console.log(querty);
-        //await bot.waitForTicks(1);
-
-        if (!path || !path.length) {
-        	console.log(`Couldn't find path. ${bot.entity.position.distanceTo(target)} : ${range}`);
-        	await oldGoto(target, range);
-        	botPosition = bot.entity.position;
-        	//await bot.waitForTicks(1);
-        	continue;
-        }
-
-        let step = path[path.length-1];
-        pathfinder.walk(bot, step.position);
-
-        await bot.waitForTicks(1);
-
-        botPosition = bot.entity.position;
-    }
-
-    bot.clearControlStates();
+	console.log(`go to position ${target}`);
+	//bot.setControlState('jump', true);
+	const myGoal = new GoalNear(target.x, target.y, target.z, range);
+	await bot.pathfinder.goto(myGoal);
 };
 
 const sideVectors = [
