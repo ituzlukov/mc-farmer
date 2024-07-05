@@ -423,19 +423,19 @@ async function sleepInBed() {
 	console.log("finding bed ...");
 
 	try {
-	let bed = bot.findBlock({
-		matching: block => bot.isABed(block),
-		maxDistance: 64
-	});
-
-	if (!bed) {
-		console.log("Couldn't find bed.");
-		return;
-	}
-
+		let bed = bot.findBlock({
+			matching: block => bot.isABed(block),
+			maxDistance: 64
+		});
+	
+		if (!bed) {
+			console.log("Couldn't find bed.");
+			return;
+		}
+	
 		const reached = await bot.goToPos(bed.position);
 		if (reached) {
-	await bot.sleep(bed);
+			await bot.sleep(bed);
 		} else {
 			console.warn(`bed is unreachable`);
 		}
@@ -471,7 +471,7 @@ async function depositLoop() {
 		for (slot of bot.inventory.slots) {
 			if (slot && slot.name == cropType) {
 				try {
-				await chest.deposit(slot.type, null, slot.count);
+					await chest.deposit(slot.type, null, slot.count);
 					console.log(`deposited ${slot.count} ${slot.name}`);
 					bot.chat(`deposited ${slot.count} ${slot.name}`);
 				} catch (err) {
@@ -515,13 +515,13 @@ async function harvestCrops() {
 
 	const times = 5;
 	for(let i = 0; i < times; i++){
-	let itemEntity = bot.nearestEntity((entity) => {
-		return entity.name.toLowerCase() === 'item'
-	});
-
-	if (itemEntity) {
+		let itemEntity = bot.nearestEntity((entity) => {
+			return entity.name.toLowerCase() === 'item'
+		});
+	
+		if (itemEntity) {
 			await bot.goToPos(itemEntity.position);
-		await bot.waitForTicks(1);
+			await bot.waitForTicks(1);
 		}
 		else{
 			break;
@@ -646,6 +646,7 @@ async function takeSnackBreak() {
 			await bot.consume();
 
 			console.log("Ate bread.");
+			bot.chat("Ate bread.");
 			ate = true;
 		}
 	}
@@ -656,6 +657,7 @@ async function takeSnackBreak() {
 		await bot.equip(carrot_id);
 		await bot.consume();
 		console.log("Ate carrot.");
+		bot.chat("Ate carrot.");
 	}
 }
 
