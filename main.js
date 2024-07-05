@@ -1,9 +1,6 @@
-const mineflayer = require('mineflayer');
-const pathfinder = require('mineflayer-pathfinder').pathfinder
-const Movements = require('mineflayer-pathfinder').Movements
-const { GoalNear } = require('mineflayer-pathfinder').goals
-const vec3 = require('vec3');
 
+const farmer = require("./farmer.js")
+const vec3 = require('vec3');
 const fs = require('node:fs');
 
 const BED_TIME = 12000;
@@ -18,22 +15,21 @@ let harvestName = 'carrots';
 let expansion = 0;
 let snackTime = false;
 
-const bot = mineflayer.createBot({
+const bot = farmer.create({
 	username: "FarmMachine",
 	host: "localhost",
 	port: 61338,
 	//viewDistance: "tiny",
 });
 
-let bedPosition;
-let chestPosition;
-let mcData;
+// let bedPosition;
+// let chestPosition;
+// let mcData;
 
 bot.on('kicked', (reason, loggedIn) => console.log(reason, loggedIn));
 bot.on('error', err => console.log(err));
 
 bot.once('spawn', async () => {
-	bot.loadPlugin(pathfinder)
 	//const defaultMove = new Movements(bot);
 
 	mcData = require('minecraft-data')(bot.version);
@@ -75,7 +71,7 @@ bot.once('spawn', async () => {
 bot.on('chat', async (username, message) => {
 	let tokens = message.split(' ');
 
-	console.log(`received the message: (${bot.game.gameMode})`);
+	console.log(`received the message: ${message}`);
 
 	switch (tokens[0]) {
 		case 'bed':
@@ -116,10 +112,9 @@ async function mainLoop() {
 	i = 0;
 	while (true) {
 		console.log(" ");
-		console.log(" ");
 		console.log(`mainLoop iteration ${i++}`);
 
-		//if (bot.time.timeOfDay > BED_TIME) await sleepInBed();
+		if (bot.time.timeOfDay > BED_TIME) await sleepInBed();
 		if (bot.inventory.slots.filter(v => v == null).length < 11) await depositLoop();
 		if (bot.food <= 10 || snackTime) await takeSnackBreak();
 
@@ -131,19 +126,9 @@ async function mainLoop() {
 		}
 
 		console.log("waitForTicks 10 ...");
-		await bot.waitForTicks(10);
-
-
-
+		await bot.waitForTicks(64);
 	}
 }
-
-bot.goto = async (target, range = 2) => {
-	console.log(`go to position ${target}`);
-	//bot.setControlState('jump', true);
-	const myGoal = new GoalNear(target.x, target.y, target.z, range);
-	await bot.pathfinder.goto(myGoal);
-};
 
 const sideVectors = [
 	[0, 0, 1],
@@ -216,7 +201,7 @@ async function expandFarm() {
 		if (!checkInventory("wooden_hoe")) await getHoe();
 		if (!bot.heldItem || bot.heldItem.name != "wooden_hoe") await bot.equip(bot.registry.itemsByName["wooden_hoe"].id);
 
-		await bot.goto(position);
+		await bot.goToPos(position);
 
 		let dirt = bot.blockAt(position);
 		//bot.chat("expand farm");
@@ -228,7 +213,7 @@ async function expandFarm() {
 		if (!checkInventory("wheat_seeds")) await getSeeds();
 		if (!bot.heldItem || bot.heldItem.name !== seedName) await bot.equip(bot.registry.itemsByName[seedName].id).catch(console.log);
 
-		await bot.goto(position);
+		await bot.goToPos(position);
 		//bot.chat("expand farm 2");
 		await bot.activateBlock(dirt, vec3(0, 1, 0)).catch(console.log);
 	}
@@ -259,7 +244,7 @@ async function getSeeds() {
 			return;
 		}
 
-		await bot.goto(grassBlock.position, 1.5);
+		await bot.goToPos(grassBlock.position, 1.5);
 
 		await bot.dig(grassBlock);
 
@@ -274,7 +259,7 @@ async function getSeeds() {
 
 		if (!itemEntity) continue;
 
-		await bot.goto(itemEntity.position);
+		await bot.goToPos(itemEntity.position);
 		await bot.waitForTicks(1);
 
 		if (checkInventory(seedName)) {
@@ -307,7 +292,7 @@ async function getWood(amount = 1) {
 
 	for (woodPosition of woodBlocks) {
 		let woodBlock = bot.blockAt(woodPosition);
-		await bot.goto(vec3(woodPosition.x, bot.entity.position.y, woodPosition.z));
+		await bot.goToPos(vec3(woodPosition.x, bot.entity.position.y, woodPosition.z));
 
 		await bot.dig(woodBlock);
 
@@ -324,7 +309,7 @@ async function getWood(amount = 1) {
 
 		await bot.waitForTicks(10); // I don't know if this'll help.
 
-		await bot.goto(vec3(itemEntity.position.x, bot.entity.position.y, itemEntity.position.z), 1);
+		await bot.goToPos(vec3(itemEntity.position.x, bot.entity.position.y, itemEntity.position.z), 1);
 		await bot.waitForTicks(1);
 	}
 }
@@ -418,7 +403,7 @@ async function getHoe() {
 	let tablePosition = craftingSpot.position;
 
 	await bot.equip(bot.registry.itemsByName["crafting_table"].id);
-	await bot.goto(tablePosition, 4);
+	await bot.goToPos(tablePosition, 4);
 	await bot.placeBlock(craftingSpot, { x: 0, y: 1, z: 0 }).catch(console.log);
 
 	console.log("Placed the table! (maybe)");
@@ -595,7 +580,7 @@ async function takeSnackBreak() {
 		let bread_id = bot.registry.itemsByName['bread'].id;
 
 		console.log("goto crafting_table ...");
-		await bot.goto(table.position);
+		await bot.goToPos(table.position);
 
 		let recipe = bot.recipesFor(bread_id, null, 1, table)[0];
 
@@ -659,9 +644,9 @@ async function startFarm() {
 	console.log(`Farm: ${farmPosition}`);
 
 	if (!checkInventory("wooden_hoe")) await getHoe();
-	if (!bot.heldItem || bot.heldItem.name != "wooden_hoe") await bot.equip(mcData.itemsByName["wooden_hoe"].id);
+	if (!bot.heldItem || bot.heldItem.name != "wooden_hoe") await bot.equip(bot.registry.itemsByName["wooden_hoe"].id);
 
-	await bot.goto(farmPosition);
+	await bot.goToPos(farmPosition);
 
 	bot.chat("start farm");
 	let dirt = bot.blockAt(farmPosition);
@@ -671,9 +656,9 @@ async function startFarm() {
 
 	// Plant seeds on dirt
 	if (!checkInventory("wheat_seeds")) await getSeeds();
-	if (!bot.heldItem || bot.heldItem.name !== seedName) await bot.equip(mcData.itemsByName[seedName].id).catch(console.log);
+	if (!bot.heldItem || bot.heldItem.name !== seedName) await bot.equip(bot.registry.itemsByName[seedName].id).catch(console.log);
 
-	await bot.goto(farmPosition);
+	await bot.goToPos(farmPosition);
 	bot.chat("start farm 2");
 	await bot.activateBlock(dirt, vec3(0, 1, 0)).catch(console.log);
 
