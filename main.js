@@ -422,6 +422,7 @@ async function sleepInBed() {
 
 	console.log("finding bed ...");
 
+	try {
 	let bed = bot.findBlock({
 		matching: block => bot.isABed(block),
 		maxDistance: 64
@@ -432,9 +433,18 @@ async function sleepInBed() {
 		return;
 	}
 
-	await bot.goto(bed.position);
-
+		const reached = await bot.goToPos(bed.position);
+		if (reached) {
 	await bot.sleep(bed);
+		} else {
+			console.warn(`bed is unreachable`);
+		}
+	}
+	catch (error) {
+		console.warn(`sleepInBed failed: ${error}`);
+	}
+
+	
 }
 
 async function depositLoop() {
