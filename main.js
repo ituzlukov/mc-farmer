@@ -497,24 +497,35 @@ async function harvestCrops() {
 	let harvest = readyCrop();
 
 	if (!harvest) {
-		console.log("Couldn't find harvest.");
+		console.log("couldn't find harvest.");
 		return;
 	}
-	console.log(harvest);
+	//console.log(harvest);
 
-	await bot.goto(harvest.position);
+	let reached = await bot.goToPos(harvest.position);
+	if (!reached) {
+		console.warn(`harvest not reachable`);
+		return;
+	}
 
+	bot.chat(`harvest ${harvest.name} at ${harvest.position}`);
 	await bot.dig(harvest);
 
-	await bot.waitForTicks(1);
+	await bot.waitForTicks(5);
 
+	const times = 5;
+	for(let i = 0; i < times; i++){
 	let itemEntity = bot.nearestEntity((entity) => {
 		return entity.name.toLowerCase() === 'item'
 	});
 
 	if (itemEntity) {
-		await bot.goto(itemEntity.position);
+			await bot.goToPos(itemEntity.position);
 		await bot.waitForTicks(1);
+		}
+		else{
+			break;
+		}
 	}
 
 	if (!bot.heldItem || bot.heldItem.name != seedName) {
@@ -522,8 +533,11 @@ async function harvestCrops() {
 		await bot.equip(bot.registry.itemsByName[seedName].id);
 	}
 
-	let dirt = bot.blockAt(harvest.position.offset(0, -1, 0));
-	bot.chat('harvest crops');
+	await bot.waitForTicks(5);
+
+	let plantPos = harvest.position.offset(0, -1, 0);
+	let dirt = bot.blockAt(plantPos);
+	bot.chat(`plant ${bot.heldItem.name} at ${plantPos}`);
 	await bot.activateBlock(dirt, vec3(0, 1, 0)).catch(console.log);
 }
 
@@ -536,7 +550,7 @@ async function fillFarmland() {
 				return block.name === "farmland";
 			},
 			count: 256,
-			maxDistance: 64,
+			maxDistance: 16,
 		});
 
 		let vacant = farmBlocks.find(position => {
@@ -548,14 +562,21 @@ async function fillFarmland() {
 			console.log("Couldn't find vacant farmland.");
 			return;
 		}
+		else{
+			console.log("vacant found");
+			//console.log(vacant);
+		}
 
-		await bot.goto(vacant);
+		const reached = await bot.goToPos(vacant);
+		if (!reached) {
+			console.warn(`vacant not reachable`);
+			return;
+		}
 
 		if (!bot.heldItem || bot.heldItem.name != seedName) {
-
 			const seed = bot.inventory.items().find(item => item.name.includes(seedName))
 			if (seed) {
-				//console.log(`equip seedName ${seedName}`);
+				console.log(`equip ${seedName}`);
 				//console.log(`equip is ${bot.registry.itemsByName[seedName].id}`);
 				await bot.equip(bot.registry.itemsByName[seedName].id);
 			}
@@ -565,21 +586,22 @@ async function fillFarmland() {
 			}
 		}
 
-		bot.chat('fill farmland');
-
-		await bot.activateBlock(bot.blockAt(vacant), vec3(0, 1, 0)).catch(console.log);
+		let blockToFarm = bot.blockAt(vacant);
+		console.log(`fill farmland by ${bot.heldItem.name} at ${vacant} ${blockToFarm.name}`);
+		bot.chat(`fill farmland by ${bot.heldItem.name} at ${vacant} ${blockToFarm.name}`);
+		await bot.activateBlock(blockToFarm, vec3(0, 1, 0)).catch(console.log);
 
 	} catch (e) {
-		console.log(e)
+		console.err(e)
 	}
 }
 
 function readyCrop() {
 	return bot.findBlock({
-		matching: (blk) => {
-			return (blk.name == harvestName && blk.metadata == 7);
+		matching: (block) => {
+			return (block.name == harvestName && block.metadata === 7);
 		},
-		maxDistance: 64,
+		maxDistance: 16,
 	});
 }
 
