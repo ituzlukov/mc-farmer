@@ -451,8 +451,8 @@ async function depositLoop() {
 	console.log("finding chest ...");
 
 	let chestBlock = bot.findBlock({
-		matching: mcData.blocksByName['chest'].id,
-		maxDistance: 64
+		matching: bot.registry.blocksByName['chest'].id,
+		maxDistance: 16
 	});
 
 	if (!chestBlock) {
@@ -460,22 +460,34 @@ async function depositLoop() {
 		return;
 	}
 
-	if (bot.entity.position.distanceTo(chestBlock.position) < 2) {
-		bot.chat("deposit");
+	const reached = await bot.goToPos(chestBlock.position);
+	if (reached) {
+		bot.lookAt(chestBlock.position);
 
-		bot.setControlState('forward', false);
-
+		console.log("open chest ...");
 		let chest = await bot.openChest(chestBlock);
 
+		deposittedTries = 0
 		for (slot of bot.inventory.slots) {
-			if (slot && slot.name == harvestName) {
+			if (slot && slot.name == cropType) {
+				try {
 				await chest.deposit(slot.type, null, slot.count);
+					console.log(`deposited ${slot.count} ${slot.name}`);
+					bot.chat(`deposited ${slot.count} ${slot.name}`);
+				} catch (err) {
+					console.warn(`unable to deposit ${slot.count} ${slot.name}`);
+					bot.chat(`unable to deposit ${slot.count} ${slot.name}`)
+				}
+				if(deposittedTries++ > 18)
+					break;
 			}
 		}
+
+		console.log("close chest ...");
 		chest.close();
-	} else {
-		bot.lookAt(chestBlock.position);
-		bot.setControlState('forward', true);
+	}
+	else {
+		console.warn(`depositLoop failed!`);
 	}
 }
 
