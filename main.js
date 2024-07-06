@@ -463,33 +463,46 @@ async function sleepInBed() {
 async function depositLoop() {
 	bot.log("finding chest ...");
 
-	let chestBlock = bot.findBlock({
+	try {
+		const chestBlocksPos = bot.findBlocks({
 		matching: bot.registry.blocksByName['chest'].id,
-		maxDistance: 16
+			count: 16,
+			maxDistance: 16,
 	});
 
-	if (!chestBlock) {
+		if (chestBlocksPos.length === 0) {
 		bot.log("Couldn't find chest.");
 		return;
 	}
 
-	const reached = await bot.goToPos(chestBlock.position);
-	if (reached) {
-		bot.lookAt(chestBlock.position);
-
-		bot.log("open chest ...");
-		let chest = await bot.openChest(chestBlock);
-
+		for (const chestBlockPos of chestBlocksPos) {
+			const reached = await bot.goToPos(chestBlockPos);
+			if (!reached) {
+				continue;
+			}
+	
+			bot.lookAt(chestBlockPos);
+			let chestBlock = bot.blockAt(chestBlockPos);
+	
+			let chestView = await bot.openChest(chestBlock);
+			const numAvailableSlots = chestView.slots.filter(v => v == null).length;
+			if (numAvailableSlots == 0)
+				continue;
+	
+			let depositOk = false;
 		deposittedTries = 0
 		for (slot of bot.inventory.slots) {
-			if (slot && slot.name == cropType) {
+				for (let vegetable of bot.vegetables) {
+					if (slot && slot.name == vegetable.cropType) {
 				try {
-					await chest.deposit(slot.type, null, slot.count);
+							await chestView.deposit(slot.type, null, slot.count);
 					bot.log(`deposited ${slot.count} ${slot.name}`);
-					bot.talk(`deposited ${slot.count} ${slot.name}`);
+							bot.talk(`Сложил ${slot.count} ${slot.name}`);
 				} catch (err) {
 					console.warn(`unable to deposit ${slot.count} ${slot.name} because ${err}`);
-					bot.talk(`unable to deposit ${slot.count} ${slot.name}`)
+							//bot.talk(`Не могу сложить ${slot.count} ${slot.name}: ${err}`);
+							depositOk = false;
+						}
 				}
 				if(deposittedTries++ > 18)
 					break;
@@ -497,10 +510,16 @@ async function depositLoop() {
 		}
 
 		bot.log("close chest ...");
-		chest.close();
-	}
-	else {
-		console.warn(`depositLoop failed!`);
+			chestView.close();
+
+			if (!depositOk) {
+				continue;
+			}
+	
+			break;
+		}
+	} catch (e) {
+		console.error(e);
 	}
 }
 
