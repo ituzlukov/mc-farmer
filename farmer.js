@@ -3,11 +3,10 @@ const pathfinder = require('mineflayer-pathfinder').pathfinder;
 const Movements = require('mineflayer-pathfinder').Movements;
 const { GoalNear } = require('mineflayer-pathfinder').goals;
 
-function create(options) {
+function createFarmerBot(options) {
     const bot = mineflayer.createBot(options);
 
     bot.once('spawn', async () => {
-
         bot.loadPlugin(pathfinder);
         
         const botMovements = new Movements(bot);
@@ -15,9 +14,9 @@ function create(options) {
         botMovements.allowParkour = false;
         botMovements.allowSprinting = false;
         botMovements.canOpenDoors = false;
-
         bot.pathfinder.setMovements(botMovements);
     });
+
 
     bot.goToPos = async (target, range = 1) => {
 
@@ -49,7 +48,48 @@ function create(options) {
         return reached;
     };
 
+
+    bot.findVacantFarmlandBlock = (distance=16) => {
+
+        let farmBlocksPos = bot.findBlocks({
+            matching: (block) => {
+                return block.name === "farmland";
+            },
+            count: 256,
+            maxDistance: distance,
+        });
+
+        let vacantPos = farmBlocksPos.find(position => {
+            let topBlock = bot.blockAt(position.offset(0, 1, 0));
+            return topBlock.name === "air" || topBlock.name === "cave_air";
+        });
+
+        if (!vacantPos) {
+            return null;
+        }
+
+        return bot.blockAt(vacantPos);
+    };
+
+    bot.collectNearestItems = async (numItemsToCollect=16) => {
+        for(let i = 0; i < numItemsToCollect; i++){
+			let itemEntity = bot.nearestEntity((entity) => {
+				return entity.name.toLowerCase() === 'item'
+			});
+		
+			if (itemEntity) {
+				await bot.goToPos(itemEntity.position);
+				await bot.waitForTicks(1);
+                ++numItemsCollected;
+			}
+			else {
+				break;
+			}
+		}
+    };
+
+
     return bot;
 }
 
-module.exports = { create }
+module.exports = { createFarmerBot }

@@ -15,7 +15,7 @@ let harvestName = 'carrots';
 let expansion = 0;
 let snackTime = false;
 
-const bot = farmer.create({
+const bot = farmer.createFarmerBot({
 	username: "Vasja",
 	host: "localhost",
 	port: 61338,
@@ -32,7 +32,7 @@ bot.on('error', err => console.log(err));
 bot.once('spawn', async () => {
 	//const defaultMove = new Movements(bot);
 
-	mcData = require('minecraft-data')(bot.version);
+	//mcData = require('minecraft-data')(bot.version);
 	bot.chat(`Привет! Я тупой фермер!`);
 
 	let farmBlocks = bot.findBlock({
@@ -118,14 +118,18 @@ async function mainLoop() {
 		if (bot.inventory.slots.filter(v => v == null).length < 11) await depositLoop();
 		if (bot.food <= 10 || snackTime) await takeSnackBreak();
 
+		await collectNearestItems();
+
 		await harvestCrops();
+
 		await fillFarmland();
+
 		if (expansion) {
 			await expandFarm();
 			expansion -= 1;
 		}
 
-		console.log("waitForTicks 10 ...");
+		console.log("waitForTicks 64 ...");
 		await bot.waitForTicks(64);
 	}
 }
@@ -441,7 +445,7 @@ async function sleepInBed() {
 		}
 	}
 	catch (e) {
-		console.err(`sleepInBed failed: ${e}`);
+		console.error(`sleepInBed failed: ${e}`);
 	}
 }
 
@@ -489,6 +493,10 @@ async function depositLoop() {
 	}
 }
 
+async function collectNearestItems(numItemsToCollect=16) {
+	await bot.collectNearestItems(numItemsToCollect);
+}
+
 async function harvestCrops() {
 	console.log("finding ready to crop ...");
 
@@ -512,20 +520,7 @@ async function harvestCrops() {
 
 		await bot.waitForTicks(5);
 
-		const times = 5;
-		for(let i = 0; i < times; i++){
-			let itemEntity = bot.nearestEntity((entity) => {
-				return entity.name.toLowerCase() === 'item'
-			});
-		
-			if (itemEntity) {
-				await bot.goToPos(itemEntity.position);
-				await bot.waitForTicks(1);
-			}
-			else{
-				break;
-			}
-		}
+		await bot.collectNearestItems();
 
 		if (!bot.heldItem || bot.heldItem.name != seedName) {
 			await getSeeds();
@@ -548,29 +543,15 @@ async function fillFarmland() {
 	console.log("finding vacant farmland ...");
 
 	try {
-		let farmBlocks = await bot.findBlocks({
-			matching: (block) => {
-				return block.name === "farmland";
-			},
-			count: 256,
-			maxDistance: 16,
-		});
-
-		let vacant = farmBlocks.find(position => {
-			let topBlock = bot.blockAt(position.offset(0, 1, 0));
-			return topBlock.name === "air" || topBlock.name === "cave_air";
-		});
-
-		if (!vacant) {
+		let blockToFarm = bot.findVacantFarmlandBlock();
+		if (!blockToFarm) {
 			console.warn("couldn't find vacant farmland.");
 			return;
 		}
-		else{
-			console.log("vacant found");
-			//console.log(vacant);
-		}
 
-		const reached = await bot.goToPos(vacant);
+		console.log("vacant found");
+
+		const reached = await bot.goToPos(blockToFarm.position);
 		if (!reached) {
 			console.warn(`vacant not reachable`);
 			return;
@@ -589,13 +570,12 @@ async function fillFarmland() {
 			}
 		}
 
-		let blockToFarm = bot.blockAt(vacant);
-		console.log(`fill farmland by ${bot.heldItem.name} at ${vacant} ${blockToFarm.name}`);
-		bot.chat(`fill farmland by ${bot.heldItem.name} at ${vacant} ${blockToFarm.name}`);
+		console.log(`fill farmland by ${bot.heldItem.name} at ${blockToFarm.position} ${blockToFarm.name}`);
+		bot.chat(`fill farmland by ${bot.heldItem.name} at ${blockToFarm.position} ${blockToFarm.name}`);
 		await bot.activateBlock(blockToFarm, vec3(0, 1, 0)).catch(console.error);
 
 	} catch (e) {
-		console.err(e)
+		console.error(e)
 	}
 }
 
