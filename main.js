@@ -33,19 +33,19 @@ bot.once('spawn', async () => {
 	//const defaultMove = new Movements(bot);
 
 	//mcData = require('minecraft-data')(bot.version);
-	bot.talk(`Привет! Я тупой фермер!`);
+	bot.talk(`Привет! Я фермер! Ща заебашу тебе тут огородик!`);
 
-	let farmBlocks = bot.findBlock({
-		matching: (block) => {
-			return block.name === "farmland";
-		},
-		maxDistance: 64,
-	});
+	// let farmBlocks = bot.findBlock({
+	// 	matching: (block) => {
+	// 		return block.name === "farmland";
+	// 	},
+	// 	maxDistance: 64,
+	// });
 
-	/*if (!farmBlocks) {
-		bot.log("Waiting for command to start.");
-		return;
-	}*/
+	// if (!farmBlocks) {
+	// 	bot.log("Waiting for command to start.");
+	// 	return;
+	// }
 
 	//bot.log(bot.registry.blocksByName);
 	// fs.writeFile("debug/blocksByName.json", JSON.stringify(bot.registry.blocksByName), function(err) {
