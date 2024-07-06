@@ -74,6 +74,9 @@ bot.on('chat', async (username, message) => {
 	bot.log(`received the message: ${message}`);
 
 	switch (tokens[0]) {
+		case 'sayItems':
+			bot.sayItems();
+			break;
 		case 'bed':
 			bedPosition = vec3(parseInt(tokens[1]), parseInt(tokens[2]), parseInt(tokens[3]));
 			break;
@@ -114,11 +117,19 @@ async function mainLoop() {
 		bot.log(" ");
 		bot.log(`mainLoop iteration ${i++}`);
 
+		//bot.log(`mainLoop iteration ${i++}, free slots: ${bot.numFreeSlots()} busy slots: ${bot.numBuzySlots()}`);
+
+		// bot.log(" ");
+		// bot.log(bot.inventory);
+		
+		// bot.log(" ");
+		// bot.log(bot.inventory.slots);
+
 		if (bot.time.timeOfDay > BED_TIME) await sleepInBed();
-		if (bot.inventory.slots.filter(v => v == null).length < 11) await depositLoop();
+		if (bot.numFreeSlots() < 33) await depositLoop();
 		if (bot.food <= 10 || snackTime) await takeSnackBreak();
 
-		await collectNearestItems();
+		await collectNearestItems(4);
 
 		await harvestCrops();
 
@@ -493,7 +504,7 @@ async function depositLoop() {
 	}
 }
 
-async function collectNearestItems(numItemsToCollect=16) {
+async function collectNearestItems(numItemsToCollect=4) {
 	await bot.collectNearestItems(numItemsToCollect);
 }
 
@@ -501,7 +512,7 @@ async function harvestCrops() {
 	bot.log("finding ready to crop ...");
 
 	try {
-		let harvest = readyCrop();
+		let harvest = bot.findReadyToCrop();
 
 		if (!harvest) {
 			bot.log("couldn't find harvest.");
@@ -577,15 +588,6 @@ async function fillFarmland() {
 	} catch (e) {
 		console.error(e)
 	}
-}
-
-function readyCrop() {
-	return bot.findBlock({
-		matching: (block) => {
-			return (block.name == harvestName && block.metadata === 7);
-		},
-		maxDistance: 16,
-	});
 }
 
 async function takeSnackBreak() {
