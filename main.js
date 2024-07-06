@@ -26,14 +26,14 @@ const bot = farmer.createFarmerBot({
 // let chestPosition;
 // let mcData;
 
-bot.on('kicked', (reason, loggedIn) => console.log(reason, loggedIn));
-bot.on('error', err => console.log(err));
+bot.on('kicked', (reason, loggedIn) => bot.log(reason, loggedIn));
+bot.on('error', err => bot.log(err));
 
 bot.once('spawn', async () => {
 	//const defaultMove = new Movements(bot);
 
 	//mcData = require('minecraft-data')(bot.version);
-	bot.chat(`Привет! Я тупой фермер!`);
+	bot.talk(`Привет! Я тупой фермер!`);
 
 	let farmBlocks = bot.findBlock({
 		matching: (block) => {
@@ -43,35 +43,35 @@ bot.once('spawn', async () => {
 	});
 
 	/*if (!farmBlocks) {
-		console.log("Waiting for command to start.");
+		bot.log("Waiting for command to start.");
 		return;
 	}*/
 
-	//console.log(bot.registry.blocksByName);
+	//bot.log(bot.registry.blocksByName);
 	// fs.writeFile("debug/blocksByName.json", JSON.stringify(bot.registry.blocksByName), function(err) {
 	// 	if(err) {
-	// 		return console.log(err);
+	// 		return bot.log(err);
 	// 	}
 	// }); 
 	// fs.writeFile("debug/itemsByName.json", JSON.stringify(bot.registry.itemsByName), function(err) {
 	// 	if(err) {
-	// 		return console.log(err);
+	// 		return bot.log(err);
 	// 	}
 	// }); 
 	// fs.writeFile("debug/mcData.json", JSON.stringify(mcData), function(err) {
 	// 	if(err) {
-	// 		return console.log(err);
+	// 		return bot.log(err);
 	// 	}
 	// }); 
 
-	console.log("Entering main loop.");
+	bot.log("Entering main loop.");
 	mainLoop();
 });
 
 bot.on('chat', async (username, message) => {
 	let tokens = message.split(' ');
 
-	console.log(`received the message: ${message}`);
+	bot.log(`received the message: ${message}`);
 
 	switch (tokens[0]) {
 		case 'bed':
@@ -89,7 +89,7 @@ bot.on('chat', async (username, message) => {
 			} else {
 				let loops = parseInt(tokens[1]);
 				expansion += loops;
-				bot.chat(`expanding to ${expansion}`)
+				bot.talk(`expanding to ${expansion}`)
 			}
 			break;
 		case 'hoe':
@@ -101,7 +101,7 @@ bot.on('chat', async (username, message) => {
 			}
 			break;
 		case 'start':
-			console.log("Starting a new farm. Wish me luck!");
+			bot.log("Starting a new farm. Wish me luck!");
 			await startFarm();
 			mainLoop();
 			break;
@@ -111,8 +111,8 @@ bot.on('chat', async (username, message) => {
 async function mainLoop() {
 	i = 0;
 	while (true) {
-		console.log(" ");
-		console.log(`mainLoop iteration ${i++}`);
+		bot.log(" ");
+		bot.log(`mainLoop iteration ${i++}`);
 
 		if (bot.time.timeOfDay > BED_TIME) await sleepInBed();
 		if (bot.inventory.slots.filter(v => v == null).length < 11) await depositLoop();
@@ -129,7 +129,7 @@ async function mainLoop() {
 			expansion -= 1;
 		}
 
-		console.log("waitForTicks 64 ...");
+		bot.log("waitForTicks 64 ...");
 		await bot.waitForTicks(64);
 	}
 }
@@ -188,10 +188,10 @@ async function findEdges() {
 }
 
 async function expandFarm() {
-	console.log("Go Expand Farm ...");
+	bot.log("Go Expand Farm ...");
 
 	let openList = await findEdges();
-	console.log(`openList:${openList}`);
+	bot.log(`openList:${openList}`);
 
 	while (openList.length > 0) {
 		let position = openList.reduce((best, item) => {
@@ -208,7 +208,7 @@ async function expandFarm() {
 		await bot.goToPos(position);
 
 		let dirt = bot.blockAt(position);
-		//bot.chat("expand farm");
+		//bot.talk("expand farm");
 		await bot.activateBlock(dirt, vec3(0, 1, 0)).catch(console.error);
 
 		await bot.waitForTicks(1);
@@ -218,11 +218,11 @@ async function expandFarm() {
 		if (!bot.heldItem || bot.heldItem.name !== seedName) await bot.equip(bot.registry.itemsByName[seedName].id).catch(console.error);
 
 		await bot.goToPos(position);
-		//bot.chat("expand farm 2");
+		//bot.talk("expand farm 2");
 		await bot.activateBlock(dirt, vec3(0, 1, 0)).catch(console.error);
 	}
 
-	bot.chat("Edges!");
+	bot.talk("Edges!");
 	expansion = 0;
 }
 
@@ -244,7 +244,7 @@ async function getSeeds() {
 		});
 
 		if (!grassBlock) {
-			console.log("Couldn't find grass.");
+			bot.log("Couldn't find grass.");
 			return;
 		}
 
@@ -256,7 +256,7 @@ async function getSeeds() {
 
 		// Look for an item entity with ID of 619 (wheat_seeds)
 		let itemEntity = bot.nearestEntity((entity) => {
-			//console.log(entity);
+			//bot.log(entity);
 			//return entity.name === 'item' && entity.metadata[7] && entity.metadata[7].itemId === 619;
 			return entity.name === 'item' && entity.metadata[7] && entity.metadata[7].itemId === 383; // carrots
 		});
@@ -267,7 +267,7 @@ async function getSeeds() {
 		await bot.waitForTicks(1);
 
 		if (checkInventory(seedName)) {
-			console.log("Found seeds.");
+			bot.log("Found seeds.");
 			return;
 		}
 	}
@@ -290,7 +290,7 @@ async function getWood(amount = 1) {
 	});
 
 	if (!woodBlocks.length) {
-		console.log("Couldn't find a tree.");
+		bot.log("Couldn't find a tree.");
 		return;
 	}
 
@@ -308,7 +308,7 @@ async function getWood(amount = 1) {
 
 		if (!itemEntity || bot.entity.position.distanceTo(itemEntity.position) > 5) continue;
 
-		console.log(`Item found at ${vec3(itemEntity.position.x, bot.entity.position.y, itemEntity.position.z)
+		bot.log(`Item found at ${vec3(itemEntity.position.x, bot.entity.position.y, itemEntity.position.z)
 			}!`);
 
 		await bot.waitForTicks(10); // I don't know if this'll help.
@@ -329,20 +329,20 @@ async function craftHoe() {
 	});
 
 	if (!table) {
-		console.log("Couldn't find a table.");
+		bot.log("Couldn't find a table.");
 		return;
 	}
 
 	let recipe = bot.recipesFor(hoe_id, null, 1, table)[0];
 
 	if (!recipe) {
-		console.log("Couldn't find a recipe.");
+		bot.log("Couldn't find a recipe.");
 		return;
 	}
 
 	await bot.craft(recipe, 1, table);
 
-	console.log("Made hoe.");
+	bot.log("Made hoe.");
 }
 
 async function getHoe() {
@@ -353,31 +353,31 @@ async function getHoe() {
 
 	await getWood(4);
 
-	console.log("Found wood!");
+	bot.log("Found wood!");
 
 	// Craft wooden planks.
 	let planksRecipes = bot.recipesFor(planksID, null, 1, null);
-	console.log(planksRecipes);
+	bot.log(planksRecipes);
 	if (!planksRecipes || !planksRecipes) {
 		comsole.err(`no planksRecipes`);
 		return;
 	}
 	await bot.craft(planksRecipes[0], 3, null);
 
-	console.log("Crafted planks!");
+	bot.log("Crafted planks!");
 
 	// Craft sticks.
 	let stickRecipes = bot.recipesFor(stickID, null, 1, null);
-	console.log(stickRecipes);
+	bot.log(stickRecipes);
 	await bot.craft(stickRecipes[0], 1, null);
 
-	console.log("Crafted sticks!");
+	bot.log("Crafted sticks!");
 
 	// Craft crafting table.
 	let tableRecipes = bot.recipesFor(tableID, null, 1, null);
 	await bot.craft(tableRecipes[0], 1, null);
 
-	console.log("Made a table!");
+	bot.log("Made a table!");
 
 	// Find somewhere to put the crafting table.
 	let solidBlocks = bot.findBlocks({
@@ -402,7 +402,7 @@ async function getHoe() {
 	}
 
 	// Place the crafting table.
-	if (!craftingSpot) console.log("Couldn't find somewhere to put the crafting table.");
+	if (!craftingSpot) bot.log("Couldn't find somewhere to put the crafting table.");
 
 	let tablePosition = craftingSpot.position;
 
@@ -410,21 +410,21 @@ async function getHoe() {
 	await bot.goToPos(tablePosition, 4);
 	await bot.placeBlock(craftingSpot, { x: 0, y: 1, z: 0 }).catch(console.error);
 
-	console.log("Placed the table! (maybe)");
+	bot.log("Placed the table! (maybe)");
 
 	await bot.waitForTicks(1);
 
 	await craftHoe();
 	await bot.waitForTicks(1);
 	await bot.equip(hoeID);
-	console.log("Equiped the hoe!");
+	bot.log("Equiped the hoe!");
 }
 
 async function sleepInBed() {
 	if (bot.isSleeping)
 		return;
 
-	console.log("finding bed ...");
+	bot.log("finding bed ...");
 
 	try {
 		let bed = bot.findBlock({
@@ -433,7 +433,7 @@ async function sleepInBed() {
 		});
 	
 		if (!bed) {
-			console.log("Couldn't find bed.");
+			bot.log("Couldn't find bed.");
 			return;
 		}
 	
@@ -450,7 +450,7 @@ async function sleepInBed() {
 }
 
 async function depositLoop() {
-	console.log("finding chest ...");
+	bot.log("finding chest ...");
 
 	let chestBlock = bot.findBlock({
 		matching: bot.registry.blocksByName['chest'].id,
@@ -458,7 +458,7 @@ async function depositLoop() {
 	});
 
 	if (!chestBlock) {
-		console.log("Couldn't find chest.");
+		bot.log("Couldn't find chest.");
 		return;
 	}
 
@@ -466,7 +466,7 @@ async function depositLoop() {
 	if (reached) {
 		bot.lookAt(chestBlock.position);
 
-		console.log("open chest ...");
+		bot.log("open chest ...");
 		let chest = await bot.openChest(chestBlock);
 
 		deposittedTries = 0
@@ -474,18 +474,18 @@ async function depositLoop() {
 			if (slot && slot.name == cropType) {
 				try {
 					await chest.deposit(slot.type, null, slot.count);
-					console.log(`deposited ${slot.count} ${slot.name}`);
-					bot.chat(`deposited ${slot.count} ${slot.name}`);
+					bot.log(`deposited ${slot.count} ${slot.name}`);
+					bot.talk(`deposited ${slot.count} ${slot.name}`);
 				} catch (err) {
 					console.warn(`unable to deposit ${slot.count} ${slot.name} because ${err}`);
-					bot.chat(`unable to deposit ${slot.count} ${slot.name}`)
+					bot.talk(`unable to deposit ${slot.count} ${slot.name}`)
 				}
 				if(deposittedTries++ > 18)
 					break;
 			}
 		}
 
-		console.log("close chest ...");
+		bot.log("close chest ...");
 		chest.close();
 	}
 	else {
@@ -498,16 +498,16 @@ async function collectNearestItems(numItemsToCollect=16) {
 }
 
 async function harvestCrops() {
-	console.log("finding ready to crop ...");
+	bot.log("finding ready to crop ...");
 
 	try {
 		let harvest = readyCrop();
 
 		if (!harvest) {
-			console.log("couldn't find harvest.");
+			bot.log("couldn't find harvest.");
 			return;
 		}
-		//console.log(harvest);
+		//bot.log(harvest);
 
 		let reached = await bot.goToPos(harvest.position);
 		if (!reached) {
@@ -515,7 +515,7 @@ async function harvestCrops() {
 			return;
 		}
 
-		bot.chat(`harvest ${harvest.name} at ${harvest.position}`);
+		bot.talk(`harvest ${harvest.name} at ${harvest.position}`);
 		await bot.dig(harvest);
 
 		await bot.waitForTicks(5);
@@ -531,7 +531,7 @@ async function harvestCrops() {
 
 		let plantPos = harvest.position.offset(0, -1, 0);
 		let dirt = bot.blockAt(plantPos);
-		bot.chat(`plant ${bot.heldItem.name} at ${plantPos}`);
+		bot.talk(`plant ${bot.heldItem.name} at ${plantPos}`);
 		await bot.activateBlock(dirt, vec3(0, 1, 0)).catch(console.error);
 	}
 	catch (e) {
@@ -540,7 +540,7 @@ async function harvestCrops() {
 }
 
 async function fillFarmland() {
-	console.log("finding vacant farmland ...");
+	bot.log("finding vacant farmland ...");
 
 	try {
 		let blockToFarm = bot.findVacantFarmlandBlock();
@@ -549,7 +549,7 @@ async function fillFarmland() {
 			return;
 		}
 
-		console.log("vacant found");
+		bot.log("vacant found");
 
 		const reached = await bot.goToPos(blockToFarm.position);
 		if (!reached) {
@@ -560,18 +560,18 @@ async function fillFarmland() {
 		if (!bot.heldItem || bot.heldItem.name != seedName) {
 			const seed = bot.inventory.items().find(item => item.name.includes(seedName))
 			if (seed) {
-				console.log(`equip ${seedName}`);
-				//console.log(`equip is ${bot.registry.itemsByName[seedName].id}`);
+				bot.log(`equip ${seedName}`);
+				//bot.log(`equip is ${bot.registry.itemsByName[seedName].id}`);
 				await bot.equip(bot.registry.itemsByName[seedName].id);
 			}
 			else {
-				bot.chat('no items to fill farmland');
+				bot.talk('no items to fill farmland');
 				return;
 			}
 		}
 
-		console.log(`fill farmland by ${bot.heldItem.name} at ${blockToFarm.position} ${blockToFarm.name}`);
-		bot.chat(`fill farmland by ${bot.heldItem.name} at ${blockToFarm.position} ${blockToFarm.name}`);
+		bot.log(`fill farmland by ${bot.heldItem.name} at ${blockToFarm.position} ${blockToFarm.name}`);
+		bot.talk(`fill farmland by ${bot.heldItem.name} at ${blockToFarm.position} ${blockToFarm.name}`);
 		await bot.activateBlock(blockToFarm, vec3(0, 1, 0)).catch(console.error);
 
 	} catch (e) {
@@ -591,7 +591,7 @@ function readyCrop() {
 async function takeSnackBreak() {
 	snackTime = false;
 
-	console.log("finding crafting_table ...");
+	bot.log("finding crafting_table ...");
 
 	let table = bot.findBlock({
 		matching: (block) => {
@@ -606,7 +606,7 @@ async function takeSnackBreak() {
 
 		let bread_id = bot.registry.itemsByName['bread'].id;
 
-		console.log("goto crafting_table ...");
+		bot.log("goto crafting_table ...");
 		const reached = await bot.goToPos(table.position);
 		if (reached) {
 			await bot.sleep(bed);
@@ -617,35 +617,35 @@ async function takeSnackBreak() {
 		let recipe = bot.recipesFor(bread_id, null, 1, table)[0];
 
 		if (!recipe) {
-			console.log("Couldn't find a recipe.");
+			bot.log("Couldn't find a recipe.");
 		}
 		else {
 			await bot.craft(recipe, 1, table);
 
-			console.log("Made bread.");
+			bot.log("Made bread.");
 
 			if (bot.food === 20) {
-				console.log(`Too full to eat.`);
+				bot.log(`Too full to eat.`);
 				return;
 			}
 
-			console.log(`equip ${bread_id}`);
+			bot.log(`equip ${bread_id}`);
 			await bot.equip(bread_id);
 			await bot.consume();
 
-			console.log("Ate bread.");
-			bot.chat("Ate bread.");
+			bot.log("Ate bread.");
+			bot.talk("Ate bread.");
 			ate = true;
 		}
 	}
 
 	if (!ate) {
 		let carrot_id = bot.registry.itemsByName['carrot'].id;
-		console.log(`equip ${carrot_id}`);
+		bot.log(`equip ${carrot_id}`);
 		await bot.equip(carrot_id);
 		await bot.consume();
-		console.log("Ate carrot.");
-		bot.chat("Ate carrot.");
+		bot.log("Ate carrot.");
+		bot.talk("Ate carrot.");
 	}
 }
 
@@ -658,7 +658,7 @@ async function startFarm() {
 		maxDistance: 20,
 	});
 
-	console.log(`Total blocks found: ${blocks.length}`);
+	bot.log(`Total blocks found: ${blocks.length}`);
 
 	let farmPosition = blocks.find((position) => {
 
@@ -674,15 +674,15 @@ async function startFarm() {
 	});
 
 	if (!farmPosition) return false;
-	console.log(`Bot: ${bot.entity.position}`);
-	console.log(`Farm: ${farmPosition}`);
+	bot.log(`Bot: ${bot.entity.position}`);
+	bot.log(`Farm: ${farmPosition}`);
 
 	if (!checkInventory("wooden_hoe")) await getHoe();
 	if (!bot.heldItem || bot.heldItem.name != "wooden_hoe") await bot.equip(bot.registry.itemsByName["wooden_hoe"].id);
 
 	await bot.goToPos(farmPosition);
 
-	bot.chat("start farm");
+	bot.talk("start farm");
 	let dirt = bot.blockAt(farmPosition);
 	await bot.activateBlock(dirt, vec3(0, 1, 0)).catch(console.error);
 
@@ -693,7 +693,7 @@ async function startFarm() {
 	if (!bot.heldItem || bot.heldItem.name !== seedName) await bot.equip(bot.registry.itemsByName[seedName].id).catch(console.error);
 
 	await bot.goToPos(farmPosition);
-	bot.chat("start farm 2");
+	bot.talk("start farm 2");
 	await bot.activateBlock(dirt, vec3(0, 1, 0)).catch(console.error);
 
 	return true;

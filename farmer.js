@@ -17,6 +17,19 @@ function createFarmerBot(options) {
         bot.pathfinder.setMovements(botMovements);
     });
 
+    bot.allowLogging = true;
+    bot.log = (message) => {
+        if (bot.allowLogging) {
+            console.log(message);
+        }
+    };
+
+    bot.allowTalking = true;
+    bot.talk = (message) => {
+        if (bot.allowTalking) {
+            bot.chat(message);
+        }
+    };
 
     bot.goToPos = async (target, range = 1) => {
 
