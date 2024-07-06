@@ -610,6 +610,7 @@ async function fillFarmland() {
 }
 
 async function takeSnackBreak() {
+	try {
 	snackTime = false;
 
 	bot.log("finding crafting_table ...");
@@ -655,7 +656,7 @@ async function takeSnackBreak() {
 			await bot.consume();
 
 			bot.log("Ate bread.");
-			bot.talk("Ate bread.");
+				bot.talk("Поел хлеба");
 			ate = true;
 		}
 	}
@@ -666,7 +667,10 @@ async function takeSnackBreak() {
 		await bot.equip(carrot_id);
 		await bot.consume();
 		bot.log("Ate carrot.");
-		bot.talk("Ate carrot.");
+			bot.talk("Поел морковки");
+		}
+	} catch (e) {
+		console.error(e);
 	}
 }
 
